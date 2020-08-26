@@ -3,38 +3,39 @@ import requests
 from datetime import date
 from pprint import pprint
 import boto3
-url = "secret"
-webhookURL = "secret"
+url = [""]
+webhookURL = [""]
 
 db = boto3.resource("dynamodb")
-table = db.Table("311-announcements")
+tables = [db.Table("311-announcements"),  db.Table("471-announcements")]
 
 def lambda_handler(event, context):
-    r = requests.get(url)
-    data = r.text
-    soup = BeautifulSoup(data, features="html.parser")
-    list = soup.find_all('ul')[0].find_all('li')
-    for item in list:
-        temp = {}
-        temp['announcement-id'] = item['id']
-        temp['title'] = item.find('span', 'announce-title').get_text()
-        item.find('span', 'announce-title').extract()
-        temp['desc'] = item.get_text()[7:]
-        try:
-            if not table.get_item(Key={'announcement-id' : temp['announcement-id']}).get("Item"):
-                table.put_item(
-                        Item=temp
-                )
-                payload = {
-                    "username": "311 Announcement",
-                    "embeds": [
-                        {
-                            "title": temp['title'],
-                            "description": temp['desc']
-                        }
-                    ]
-                }
-                requests.post(webhookURL, json=payload)
-        except Exception as e:
-            print(e)
+    for x in range(0,len(url)):
+        r = requests.get(url[x])
+        data = r.text
+        soup = BeautifulSoup(data, features="html.parser")
+        list = soup.find_all('ul')[0].find_all('li')
+        for item in list:
+            temp = {}
+            temp['announcement-id'] = item['id']
+            temp['title'] = item.find('span', 'announce-title').get_text()
+            item.find('span', 'announce-title').extract()
+            temp['desc'] = item.get_text()[7:]
+            try:
+                if not tables[x].get_item(Key={'announcement-id' : temp['announcement-id']}).get("Item"):
+                    tables[x].put_item(
+                            Item=temp
+                    )
+                    payload = {
+                        "username": "Class Announcement",
+                        "embeds": [
+                            {
+                                "title": temp['title'],
+                                "description": temp['desc']
+                            }
+                        ]
+                    }
+                    requests.post(webhookURL[x], json=payload)
+            except Exception as e:
+                print(e)
 
