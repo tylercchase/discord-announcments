@@ -40,6 +40,6 @@ jobs:
             --stack-name class-announcements \
             --template-file packaged.yml \
             --capabilities CAPABILITY_IAM \
-            --paramter-overrides \
+            --parameter-overrides \
               Webhook="${WEBHOOK}" \
               Class="${CLASS}" \
