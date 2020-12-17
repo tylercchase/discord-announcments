@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Paramters:
+  Class:
+    Type: String
+  Webhook:
+    Type: String
+
+Resources:
+  AnnouncementsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: announcement-id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: announcement-id
+          AttributeType: S
+  ParserRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Action: sts:AssumeRole
+          Principal:
+            Service: lambda.amazonaws.com
+          Effect: Allow
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - Dynamodb:GetItem
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AnnouncementsTable}*"
+              - Effect: Allow
+                Action:
+                  - Dynamodb:PutItem
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AnnouncementsTable}*"
+          PolicyName: Policy
+  Parser:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: src/
+      Handler: main.lambda_handler
+      Role: !GetAtt ParserRole.arn
+      Runtime: python3.7
+      Timeout: 10
+      Environment:
+        Variables:
+          DYNAMO_DB: !Ref AnnouncementsTable
+          WEBHOOK: !Ref Webhook
+          CLASS: !Ref Class
+  EventInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref Parser
+      Qualifier: $LATEST
+  Scheduler:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(30 minutes)
+      Targets:
+        - Arn: !GetAtt Parser.arn
+          Id: parser
+  EventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt Parser.arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt Scheduler.arn

@@ -3,11 +3,12 @@ import requests
 from datetime import date
 from pprint import pprint
 import boto3
-url = [""]
-webhookURL = [""]
+import os
+url = [os.environ["CLASS"]]
+webhookURL = [os.environ["WEBHOOK"]]
 
 db = boto3.resource("dynamodb")
-tables = [db.Table("311-announcements"),  db.Table("471-announcements")]
+tables = [db.Table(os.environ["DYNAMO_DB"])]
 
 def lambda_handler(event, context):
     for x in range(0,len(url)):
