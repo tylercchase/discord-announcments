@@ -1,0 +1,46 @@
+on:
+  push:
+    branches:
+      - master
+
+env:
+  TEMPLATE_BUCKET: tcchase-templates
+  AWS_REGION: us-west-2
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  CLASS: ${{ secrets.CLASS }}
+  WEBHOOK: ${{ secrets.WEBHOOK }}
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - working-directory: api
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt -t src
+      - run: |
+          aws cloudformation package \
+            --template-file cloudformation.yml \
+            --s3-bucket ${TEMPLATE_BUCKET} \
+            --output-template-file packaged.yml
+          aws cloudformation deploy \
+            --stack-name class-announcements \
+            --template-file packaged.yml \
+            --capabilities CAPABILITY_IAM \
+            --paramter-overrides \
+              Webhook="${WEBHOOK}" \
+              Class="${CLASS}" \
