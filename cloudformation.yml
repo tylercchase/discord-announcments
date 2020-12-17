@@ -44,7 +44,7 @@ Resources:
     Properties:
       Code: src/
       Handler: main.lambda_handler
-      Role: !GetAtt ParserRole.arn
+      Role: !GetAtt ParserRole.Arn
       Runtime: python3.7
       Timeout: 10
       Environment:
@@ -62,12 +62,12 @@ Resources:
     Properties:
       ScheduleExpression: rate(30 minutes)
       Targets:
-        - Arn: !GetAtt Parser.arn
+        - Arn: !Ref Parser
           Id: parser
   EventPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt Parser.arn
+      FunctionName: !GetAtt Parser.Arn
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt Scheduler.arn
+      SourceArn: !GetAtt Scheduler.Arn
