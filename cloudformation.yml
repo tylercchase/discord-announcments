@@ -58,6 +58,7 @@ Resources:
     Properties:
       FunctionName: !Ref Parser
       Qualifier: $LATEST
+      MaximumRetryAttempts: 0
   Scheduler:
     Type: AWS::Events::Rule
     Properties:
