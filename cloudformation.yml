@@ -64,7 +64,7 @@ Resources:
     Properties:
       ScheduleExpression: rate(30 minutes)
       Targets:
-        - Arn: !Ref Parser
+        - Arn: !GetAtt  Parser.Arn
           Id: parser
   EventPermission:
     Type: AWS::Lambda::Permission
