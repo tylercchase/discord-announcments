@@ -26,10 +26,9 @@ jobs:
 
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.8
+          python-version: 3.7
 
-      - working-directory: api
-        run: |
+      - run: |
           pip install --upgrade pip
           pip install -r requirements.txt -t src
       - run: |
